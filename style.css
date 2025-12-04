@@ -289,6 +289,49 @@ body.dark-theme {
     text-align: center;
 }
 
+.streak-indicator {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    padding: 8px 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    text-align: center;
+    min-width: 60px;
+    transition: all 0.3s ease;
+}
+
+.streak-indicator.active {
+    background: rgba(255, 215, 0, 0.2);
+    border-color: #ffd700;
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+}
+
+.streak-label {
+    font-size: 9px;
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 2px;
+}
+
+.streak-value {
+    font-size: 18px;
+    font-weight: bold;
+    color: #fff;
+}
+
+.streak-indicator.active .streak-value {
+    color: #ffd700;
+    animation: streakPulse 0.5s ease;
+}
+
+@keyframes streakPulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.2);
+    }
+}
+
 .pause-btn {
     background: rgba(255, 255, 255, 0.2);
     backdrop-filter: blur(10px);

@@ -332,6 +332,7 @@ class MathPuzzleGame {
         this.powerUps = { bomb: 0, freeze: 0, double: 0 };
         
         this.showGameArea();
+        this.updateStreakDisplay();
         this.createBoard();
         this.updateDisplay();
         this.hideGameOver();
@@ -544,11 +545,24 @@ class MathPuzzleGame {
         this.updateDisplay();
         this.updateCell(index1);
         this.updateCell(index2);
+        this.updateStreakDisplay();
         
         // Oyun sonu kontrolü
         const emptyCells = this.board.filter(val => val === 0);
         if (emptyCells.length === 0) {
             setTimeout(() => this.endGame(), 500);
+        }
+    }
+
+    updateStreakDisplay() {
+        const streakEl = document.getElementById('streakValue');
+        if (streakEl) {
+            streakEl.textContent = this.streakCount;
+            if (this.streakCount > 1) {
+                streakEl.parentElement.classList.add('active');
+            } else {
+                streakEl.parentElement.classList.remove('active');
+            }
         }
     }
 
