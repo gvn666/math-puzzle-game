@@ -535,9 +535,6 @@ class MathPuzzleGame {
         const cell1 = document.querySelector(`[data-index="${index1}"]`);
         const cell2 = document.querySelector(`[data-index="${index2}"]`);
         
-        // Ekran titreşimi efekti
-        this.screenShake();
-        
         // Sayıların birbirine doğru kayması animasyonu
         this.animateMerge(cell1, cell2, () => {
             // Animasyon tamamlandıktan sonra güncelle
@@ -991,16 +988,63 @@ class MathPuzzleGame {
         }
     }
 
-    screenShake() {
-        const gameArea = document.getElementById('gameArea');
-        if (gameArea) {
-            gameArea.classList.add('screen-shake');
-            setTimeout(() => {
-                gameArea.classList.remove('screen-shake');
-            }, 500);
+}
+
+// PWA Install Prompt
+let deferredPrompt;
+let installButton;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    // Install butonu göster (isteğe bağlı)
+    showInstallButton();
+});
+
+function showInstallButton() {
+    // Ana menüde install butonu eklenebilir
+    const mainMenu = document.getElementById('mainMenu');
+    if (mainMenu && !document.getElementById('installBtn')) {
+        const installBtn = document.createElement('button');
+        installBtn.id = 'installBtn';
+        installBtn.className = 'menu-btn';
+        installBtn.innerHTML = '📱 Ana Ekrana Ekle';
+        installBtn.addEventListener('click', installPWA);
+        const menuButtons = mainMenu.querySelector('.menu-buttons');
+        if (menuButtons) {
+            menuButtons.insertBefore(installBtn, menuButtons.firstChild);
         }
     }
 }
+
+async function installPWA() {
+    if (!deferredPrompt) {
+        // Fallback: Manuel kurulum talimatları
+        alert('Bu uygulamayı ana ekrana eklemek için:\n\n' +
+              'iOS Safari: Paylaş → Ana Ekrana Ekle\n' +
+              'Android Chrome: Menü → Ana Ekrana Ekle\n' +
+              'Desktop: Adres çubuğundaki kur ikonuna tıklayın');
+        return;
+    }
+    
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    
+    if (outcome === 'accepted') {
+        console.log('PWA installed');
+        const installBtn = document.getElementById('installBtn');
+        if (installBtn) installBtn.style.display = 'none';
+    }
+    
+    deferredPrompt = null;
+}
+
+window.addEventListener('appinstalled', () => {
+    console.log('PWA was installed');
+    deferredPrompt = null;
+    const installBtn = document.getElementById('installBtn');
+    if (installBtn) installBtn.style.display = 'none';
+});
 
 // Service Worker kaydı ve güncelleme kontrolü
 if ('serviceWorker' in navigator) {
