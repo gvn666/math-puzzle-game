@@ -489,8 +489,9 @@ class MathPuzzleGame {
             newValue = value1 + value2;
         }
         
-        this.board[index1] = newValue;
-        this.board[index2] = 0;
+        // Yeni sayı ikinci tıklanan (index2) yerde oluşsun
+        this.board[index2] = newValue;
+        this.board[index1] = 0; // İlk tıklanan yeri boşalt
         this.maxNumber = Math.max(this.maxNumber, newValue);
         this.matchCount++;
         
@@ -529,28 +530,80 @@ class MathPuzzleGame {
         this.totalScore += matchScore;
         this.playMatchSound();
         this.vibrate(20);
-        this.createParticles(index1, index2);
         
-        // Animasyonlar
+        // Gelişmiş görsel efektler
         const cell1 = document.querySelector(`[data-index="${index1}"]`);
         const cell2 = document.querySelector(`[data-index="${index2}"]`);
         
-        cell1.classList.add('merged');
-        setTimeout(() => cell1.classList.remove('merged'), 500);
+        // Ekran titreşimi efekti
+        this.screenShake();
         
-        this.selectedCells = [];
-        cell1.classList.remove('selected');
-        cell2.classList.remove('selected');
+        // Sayıların birbirine doğru kayması animasyonu
+        this.animateMerge(cell1, cell2, () => {
+            // Animasyon tamamlandıktan sonra güncelle
+            this.selectedCells = [];
+            cell1.classList.remove('selected');
+            cell2.classList.remove('selected');
+            
+            this.updateDisplay();
+            this.updateCell(index1);
+            this.updateCell(index2);
+            this.updateStreakDisplay();
+            
+            // Oyun sonu kontrolü
+            const emptyCells = this.board.filter(val => val === 0);
+            if (emptyCells.length === 0) {
+                setTimeout(() => this.endGame(), 500);
+            }
+        });
+    }
+
+    animateMerge(cell1, cell2, callback) {
+        // İlk hücreyi kaybolma animasyonu ile boşalt
+        cell1.classList.add('merging-out');
         
-        this.updateDisplay();
-        this.updateCell(index1);
-        this.updateCell(index2);
-        this.updateStreakDisplay();
+        // İkinci hücreye patlama ve büyüme efekti
+        cell2.classList.add('merging-in');
         
-        // Oyun sonu kontrolü
-        const emptyCells = this.board.filter(val => val === 0);
-        if (emptyCells.length === 0) {
-            setTimeout(() => this.endGame(), 500);
+        // Parçacık efektleri
+        this.createParticles(cell1, cell2);
+        this.createExplosion(cell2);
+        
+        // Glow efekti
+        cell2.classList.add('glow-effect');
+        
+        setTimeout(() => {
+            cell1.classList.remove('merging-out', 'selected');
+            cell2.classList.remove('merging-in', 'glow-effect');
+            if (callback) callback();
+        }, 600);
+    }
+
+    createExplosion(cell) {
+        const rect = cell.getBoundingClientRect();
+        const container = document.getElementById('particleContainer');
+        
+        // Patlama efektleri için daha fazla parçacık
+        for (let i = 0; i < 20; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'explosion-particle';
+            particle.style.left = (rect.left + rect.width / 2) + 'px';
+            particle.style.top = (rect.top + rect.height / 2) + 'px';
+            
+            const angle = (Math.PI * 2 * i) / 20;
+            const distance = 80 + Math.random() * 60;
+            const duration = 800 + Math.random() * 400;
+            const size = 4 + Math.random() * 6;
+            
+            particle.style.width = size + 'px';
+            particle.style.height = size + 'px';
+            particle.style.background = cell.style.backgroundColor || '#fff';
+            particle.style.setProperty('--angle', angle);
+            particle.style.setProperty('--distance', distance + 'px');
+            particle.style.setProperty('--duration', duration + 'ms');
+            
+            container.appendChild(particle);
+            setTimeout(() => particle.remove(), duration);
         }
     }
 
@@ -566,31 +619,41 @@ class MathPuzzleGame {
         }
     }
 
-    createParticles(index1, index2) {
+    createParticles(cell1, cell2) {
         const container = document.getElementById('particleContainer');
-        const cell1 = document.querySelector(`[data-index="${index1}"]`);
-        const cell2 = document.querySelector(`[data-index="${index2}"]`);
-        
         const rect1 = cell1.getBoundingClientRect();
         const rect2 = cell2.getBoundingClientRect();
         
-        for (let i = 0; i < 10; i++) {
+        // İlk hücreden ikinci hücreye doğru akan parçacıklar
+        const startX = rect1.left + rect1.width / 2;
+        const startY = rect1.top + rect1.height / 2;
+        const endX = rect2.left + rect2.width / 2;
+        const endY = rect2.top + rect2.height / 2;
+        
+        const dx = endX - startX;
+        const dy = endY - startY;
+        const angle = Math.atan2(dy, dx);
+        
+        for (let i = 0; i < 15; i++) {
             const particle = document.createElement('div');
             particle.className = 'particle';
-            particle.style.left = (rect1.left + rect1.width / 2) + 'px';
-            particle.style.top = (rect1.top + rect1.height / 2) + 'px';
+            particle.style.left = startX + 'px';
+            particle.style.top = startY + 'px';
             particle.style.background = cell1.style.backgroundColor || '#fff';
             
-            const angle = (Math.PI * 2 * i) / 10;
-            const distance = 50 + Math.random() * 50;
-            const duration = 500 + Math.random() * 300;
+            const spread = (Math.random() - 0.5) * 0.5; // Yayılma açısı
+            const particleAngle = angle + spread;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const duration = 400 + Math.random() * 200;
+            const size = 6 + Math.random() * 4;
             
-            particle.style.setProperty('--angle', angle);
+            particle.style.width = size + 'px';
+            particle.style.height = size + 'px';
+            particle.style.setProperty('--angle', particleAngle);
             particle.style.setProperty('--distance', distance + 'px');
             particle.style.setProperty('--duration', duration + 'ms');
             
             container.appendChild(particle);
-            
             setTimeout(() => particle.remove(), duration);
         }
     }
@@ -925,6 +988,16 @@ class MathPuzzleGame {
         if (cell) {
             cell.classList.add('special-number');
             setTimeout(() => cell.classList.remove('special-number'), 1000);
+        }
+    }
+
+    screenShake() {
+        const gameArea = document.getElementById('gameArea');
+        if (gameArea) {
+            gameArea.classList.add('screen-shake');
+            setTimeout(() => {
+                gameArea.classList.remove('screen-shake');
+            }, 500);
         }
     }
 }
