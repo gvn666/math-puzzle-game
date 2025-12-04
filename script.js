@@ -1002,12 +1002,47 @@ class MathPuzzleGame {
     }
 }
 
-// Service Worker kaydı
+// Service Worker kaydı ve güncelleme kontrolü
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/service-worker.js')
-            .then(reg => console.log('Service Worker registered'))
-            .catch(err => console.log('Service Worker registration failed'));
+        navigator.serviceWorker.register('/service-worker.js', {
+            updateViaCache: 'none' // Her zaman network'ten kontrol et
+        })
+        .then(reg => {
+            console.log('Service Worker registered:', reg.scope);
+            
+            // Güncelleme kontrolü
+            reg.addEventListener('updatefound', () => {
+                const newWorker = reg.installing;
+                console.log('New Service Worker found, updating...');
+                
+                newWorker.addEventListener('statechange', () => {
+                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                        // Yeni versiyon hazır, kullanıcıya bildir
+                        console.log('New version available! Reloading...');
+                        // Otomatik yenileme (opsiyonel)
+                        window.location.reload();
+                    }
+                });
+            });
+            
+            // Periyodik güncelleme kontrolü (her 60 saniyede bir)
+            setInterval(() => {
+                reg.update();
+            }, 60000);
+        })
+        .catch(err => console.log('Service Worker registration failed:', err));
+    });
+    
+    // Sayfa görünür olduğunda güncelleme kontrolü
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden && 'serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistration().then(reg => {
+                if (reg) {
+                    reg.update();
+                }
+            });
+        }
     });
 }
 
